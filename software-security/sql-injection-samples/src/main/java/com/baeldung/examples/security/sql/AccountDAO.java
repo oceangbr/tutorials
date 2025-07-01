@@ -52,11 +52,12 @@ public class AccountDAO {
      */
     public List<AccountDTO> unsafeFindAccountsByCustomerId(String customerId) {
 
-        String sql = "select " + "customer_id,acc_number,branch_id,balance from Accounts where customer_id = '" + customerId + "'";
+        String sql = "select customer_id,acc_number,branch_id,balance from Accounts where customer_id = ?";
 
         try (Connection c = dataSource.getConnection();
-            ResultSet rs = c.createStatement()
-                .executeQuery(sql)) {
+            PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, customerId);
+            ResultSet rs = ps.executeQuery();
             List<AccountDTO> accounts = new ArrayList<>();
             while (rs.next()) {
                 AccountDTO acc = AccountDTO.builder()

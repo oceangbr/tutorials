@@ -31,12 +31,13 @@ public class ExcelPOIHelper {
     public Map<Integer, List<MyCell>> readExcel(String fileLocation) throws IOException {
 
         Map<Integer, List<MyCell>> data = new HashMap<>();
-        FileInputStream fis = new FileInputStream(new File(fileLocation));
-
-        if (fileLocation.endsWith(".xls")) {
-            data = readHSSFWorkbook(fis);
-        } else if (fileLocation.endsWith(".xlsx")) {
-            data = readXSSFWorkbook(fis);
+        
+        try (FileInputStream fis = new FileInputStream(new File(fileLocation))) {
+            if (fileLocation.endsWith(".xls")) {
+                data = readHSSFWorkbook(fis);
+            } else if (fileLocation.endsWith(".xlsx")) {
+                data = readXSSFWorkbook(fis);
+            }
         }
 
         int maxNrCols = data.values().stream()

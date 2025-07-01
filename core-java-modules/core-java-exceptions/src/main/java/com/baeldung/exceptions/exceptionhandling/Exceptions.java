@@ -176,8 +176,12 @@ public class Exceptions {
     public int getPlayerScoreSwallowingExceptionAntiPattern(String playerFile) {
         try {
         // ...
-        } catch (Exception e) {} // <== catch and swallow
-            return 0;
+        } catch (Exception e) {
+            logger.warning("Failed to get player score from file: " + playerFile + ". Error: " + e.getMessage());
+            // Log the full stack trace for debugging purposes
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     public int getPlayerScoreSwallowingExceptionAntiPatternAlternative(String playerFile) {
