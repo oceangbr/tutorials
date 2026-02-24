@@ -655,6 +655,14 @@ def main(argv: list[str]) -> int:
 
     term_findings = term_consistency_findings(page_results, per_rule_limit=10)
 
+    # Keep the JSON output reasonably sized: `visible_text` is used to compute
+    # `term_findings` but is not typically useful in the exported report.
+    pages_payload: list[dict[str, Any]] = []
+    for p in page_results:
+        d = dataclasses.asdict(p)
+        d.pop("visible_text", None)
+        pages_payload.append(d)
+
     payload = {
         "started_at": started_at,
         "config": {
@@ -666,7 +674,7 @@ def main(argv: list[str]) -> int:
             "link_workers": args.link_workers,
             "no_external": args.no_external,
         },
-        "pages": [dataclasses.asdict(p) for p in page_results],
+        "pages": pages_payload,
         "anchors_by_url": anchor_sources,
         "link_checks": [dataclasses.asdict(c) for c in checks],
         "term_findings": term_findings,
