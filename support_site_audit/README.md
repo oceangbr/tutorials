@@ -17,6 +17,16 @@ Outputs are written to `./support_site_audit_reports/`:
 - `beaufort12_support_audit_<timestamp>.md` (human report)
 - `beaufort12_support_audit_<timestamp>.json` (machine-readable raw results)
 
+## Render an HTML report (from an existing JSON)
+
+If you already have a saved audit JSON and want a shareable HTML report without re-running the crawl:
+
+```bash
+python3 support_site_audit/render_html.py support_site_audit_report/beaufort12_support_audit_*.json
+```
+
+This will write an `.html` file alongside the JSON.
+
 ## Notes
 - External sites sometimes block automated requests (403/429/999) or require a different TLS chain than this environment provides; these are reported separately as “blocked/unverifiable” or “TLS/SSL verification failures”.
 - For a faster run, you can skip external checks:
