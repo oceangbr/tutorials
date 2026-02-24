@@ -67,10 +67,10 @@ def normalize_url(base_url: str, href: str) -> str | None:
 
 def strip_tags(s: str) -> str:
     # Very small tag stripper for metadata captures.
-    s = re.sub(r"<script\\b[\\s\\S]*?</script>", " ", s, flags=re.I)
-    s = re.sub(r"<style\\b[\\s\\S]*?</style>", " ", s, flags=re.I)
+    s = re.sub(r"<script\b[\s\S]*?</script>", " ", s, flags=re.I)
+    s = re.sub(r"<style\b[\s\S]*?</style>", " ", s, flags=re.I)
     s = re.sub(r"<[^>]+>", " ", s)
-    return re.sub(r"\\s+", " ", html.unescape(s)).strip()
+    return re.sub(r"\s+", " ", html.unescape(s)).strip()
 
 
 def extract_visible_text(html_text: str) -> str:
@@ -85,32 +85,32 @@ def extract_title(html_text: str) -> str | None:
 
 def extract_meta_description(html_text: str) -> str | None:
     m = re.search(
-        r'<meta\\s+[^>]*name=["\\\']description["\\\'][^>]*>',
+        r'<meta\s+[^>]*name=["\']description["\'][^>]*>',
         html_text,
         flags=re.I,
     )
     if not m:
         return None
     tag = m.group(0)
-    m2 = re.search(r'content=["\\\']([^"\\\']*)["\\\']', tag, flags=re.I)
+    m2 = re.search(r'content=["\']([^"\']*)["\']', tag, flags=re.I)
     return html.unescape(m2.group(1)).strip() if m2 else None
 
 
 def extract_canonical(html_text: str) -> str | None:
     m = re.search(
-        r'<link\\s+[^>]*rel=["\\\']canonical["\\\'][^>]*>',
+        r'<link\s+[^>]*rel=["\']canonical["\'][^>]*>',
         html_text,
         flags=re.I,
     )
     if not m:
         return None
     tag = m.group(0)
-    m2 = re.search(r'href=["\\\']([^"\\\']+)["\\\']', tag, flags=re.I)
+    m2 = re.search(r'href=["\']([^"\']+)["\']', tag, flags=re.I)
     return html.unescape(m2.group(1)).strip() if m2 else None
 
 
 def extract_first_h1(html_text: str) -> str | None:
-    m = re.search(r"<h1\\b[^>]*>(.*?)</h1>", html_text, flags=re.I | re.S)
+    m = re.search(r"<h1\b[^>]*>(.*?)</h1>", html_text, flags=re.I | re.S)
     return strip_tags(m.group(1)) if m else None
 
 
@@ -119,7 +119,7 @@ def url_suspicious_punctuation(raw_href: str) -> str | None:
     if not raw_href:
         return None
     # Common authoring mistakes: punctuation accidentally included in href.
-    m = re.search(r"[\\)\\]\\.,;:]$", raw_href)
+    m = re.search(r"[\)\]\.,;:]$", raw_href)
     return m.group(0) if m else None
 
 
@@ -153,7 +153,7 @@ class AnchorParser(HTMLParser):
             return
         raw_href = (self._current_href or "").strip()
         normalized = normalize_url(self.base_url, raw_href) if raw_href else None
-        text = re.sub(r"\\s+", " ", "".join(self._current_text_parts)).strip()
+        text = re.sub(r"\s+", " ", "".join(self._current_text_parts)).strip()
         if normalized:
             self.anchors.append(
                 Anchor(
@@ -297,8 +297,8 @@ def check_links(
         # Conservative: accept id or name.
         frag = re.escape(fragment)
         return bool(
-            re.search(rf'\\bid=["\\\']{frag}["\\\']', body)
-            or re.search(rf'\\bname=["\\\']{frag}["\\\']', body)
+            re.search(rf'\bid=["\']{frag}["\']', body)
+            or re.search(rf'\bname=["\']{frag}["\']', body)
         )
 
     def check_one(full_url: str) -> LinkCheck:
@@ -378,27 +378,37 @@ def term_consistency_findings(pages: list[PageResult], per_rule_limit: int = 10)
     rules = [
         {
             "id": "sales_force",
-            "pattern": re.compile(r"\\bSales\\s+force\\b", re.I),
+            "pattern": re.compile(r"\bSales\s+force\b", re.I),
             "suggestion": "Use “Salesforce”.",
         },
         {
             "id": "app_exchange",
-            "pattern": re.compile(r"\\bApp\\s+Exchange\\b", re.I),
+            "pattern": re.compile(r"\bApp\s+Exchange\b", re.I),
             "suggestion": "Use “AppExchange”.",
         },
         {
             "id": "mail_chimp",
-            "pattern": re.compile(r"\\bMail\\s+Chimp\\b", re.I),
+            "pattern": re.compile(r"\bMail\s+Chimp\b", re.I),
             "suggestion": "Use “Mailchimp”.",
         },
         {
+            "id": "premuim_typo",
+            "pattern": re.compile(r"\bpremuim\b", re.I),
+            "suggestion": "Typo: “premuim” → “premium”.",
+        },
+        {
             "id": "segement_typo",
-            "pattern": re.compile(r"\\bsegement\\b", re.I),
+            "pattern": re.compile(r"\bsegement\b", re.I),
             "suggestion": "Typo: “segement” → “segment”.",
         },
         {
+            "id": "duplicate_word",
+            "pattern": re.compile(r"\b(the|a|an|to|of)\s+\1\b", re.I),
+            "suggestion": "Remove duplicated word (e.g., “the the”).",
+        },
+        {
             "id": "space_before_punct",
-            "pattern": re.compile(r"\\b\\w+\\s+[\\.,;:!?]"),
+            "pattern": re.compile(r"\b\w+\s+[\.,;:!?]"),
             "suggestion": "Remove the extra space before punctuation.",
         },
         {
@@ -518,9 +528,9 @@ def render_report(
                 extra.append(f"raw={raw!r}")
             extra_s = f" ({', '.join(extra)})" if extra else ""
             parts.append(f"- {s['source_page']}{extra_s}" + (f" — “{txt}”" if txt else ""))
-        out = "\\n".join(parts)
+        out = "\n".join(parts)
         if remainder > 0:
-            out += f"\\n- _(and {remainder} more source page(s))_"
+            out += f"\n- _(and {remainder} more source page(s))_"
         return out
 
     if broken_internal:
@@ -545,7 +555,7 @@ def render_report(
         for c in missing_frags:
             lines.append(f"- `{c.url}` (fragment `#{c.fragment}` not found on `{c.final_url or c.url_no_fragment}`)")
             lines.append("  Source pages:")
-            lines.append("  " + fmt_sources(c.url).replace("\\n", "\\n  "))
+            lines.append("  " + fmt_sources(c.url).replace("\n", "\n  "))
         lines.append("")
 
     if broken_external:
@@ -554,7 +564,7 @@ def render_report(
         for c in broken_external:
             lines.append(f"- `{c.url}` → **{c.status_code}**")
             lines.append("  Source pages:")
-            lines.append("  " + fmt_sources(c.url).replace("\\n", "\\n  "))
+            lines.append("  " + fmt_sources(c.url).replace("\n", "\n  "))
         lines.append("")
 
     if external_ssl:
@@ -567,7 +577,7 @@ def render_report(
             if c.error:
                 lines.append(f"  - Error: `{c.error}`")
             lines.append("  Source pages:")
-            lines.append("  " + fmt_sources(c.url).replace("\\n", "\\n  "))
+            lines.append("  " + fmt_sources(c.url).replace("\n", "\n  "))
         lines.append("")
 
     if external_blocked:
@@ -578,7 +588,7 @@ def render_report(
         for c in external_blocked:
             lines.append(f"- `{c.url}` → **{c.status_code}**")
             lines.append("  Source pages:")
-            lines.append("  " + fmt_sources(c.url).replace("\\n", "\\n  "))
+            lines.append("  " + fmt_sources(c.url).replace("\n", "\n  "))
         lines.append("")
 
     if http_to_https:
@@ -602,7 +612,7 @@ def render_report(
             lines.append(f"  - Snippet: “{f['snippet']}”")
         lines.append("")
 
-    return "\\n".join(lines)
+    return "\n".join(lines)
 
 
 def main(argv: list[str]) -> int:
