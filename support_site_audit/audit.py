@@ -15,6 +15,7 @@ What it does:
 - Writes:
   - JSON results
   - Markdown report
+  - HTML report
 
 No third-party parsing libraries are required (uses stdlib HTMLParser).
 """
@@ -26,6 +27,7 @@ import dataclasses
 import html
 from html.parser import HTMLParser
 import json
+import os
 import re
 import ssl
 import sys
@@ -37,6 +39,11 @@ from typing import Any
 from urllib.parse import urldefrag, urljoin, urlparse
 
 import requests
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+from render_html import render_html_report  # noqa: E402
 
 
 USER_AGENT = "beaufort12-support-audit/1.0 (+https://www.beaufort12.com/support)"
@@ -694,9 +701,7 @@ def main(argv: list[str]) -> int:
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     json_path = f"{out_dir}/beaufort12_support_audit_{ts}.json"
     report_path = f"{out_dir}/beaufort12_support_audit_{ts}.md"
-
-    # Create output directory (without using external tools).
-    import os
+    html_path = f"{out_dir}/beaufort12_support_audit_{ts}.html"
 
     os.makedirs(out_dir, exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
@@ -712,8 +717,12 @@ def main(argv: list[str]) -> int:
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report)
 
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(render_html_report(payload))
+
     print(f"Wrote JSON: {json_path}")
     print(f"Wrote report: {report_path}")
+    print(f"Wrote HTML: {html_path}")
     return 0
 
 
